@@ -1,0 +1,99 @@
+---
+#The name of your workflow.
+#GitHub displays the names of your workflows on your repository's actions page.
+#If you omit this field, GitHub sets the name to the workflow's filename
+name: Execute Tests
+#run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+
+#array | object | string
+#The name of the GitHub event that triggers the workflow.
+#You can provide a single event string, array of events,
+#array of event types, or an event configuration map that schedules a workflow
+#or restricts the execution of a workflow to specific files, tags, or branch changes.
+# For a list of available events, see https://help.github.com/en/github/automating-your-workflow-with-github-actions/events-that-trigger-workflows.
+on:
+  #Allows workflows to be reused by other workflows
+  workflow_call:
+    # inputs: objec When using the workflow_call keyword,
+    #you can optionally specify inputs that are passed to the called workflow from the caller workflow.
+    inputs:
+      dockerTag:
+        description: The docker versions to run test
+        type: string
+        required: false
+        default: 'latest'
+      locale:
+        description: Locale to test aganist
+        type: string
+        required: false
+      environment:
+        description: |
+          ['int', 'stage','prod','test']
+          Environment to run the test aganist
+        type: string
+        required: false
+        default: 'test'
+      config:
+        description: Configuration file containig the suite
+        type: string
+        required: true
+      suite:
+        description: The suite to run test
+        type: string
+        required: true
+      name:
+        description: Run regression
+        type: string
+        required: false
+      headless:
+        description: Run test as headless?
+        type: boolean
+        required: false
+        default: true
+#env: object | string A map of environment variables that are available to all jobs and steps in the workflow.
+env:
+  SLACK_CHANNELS: SLACK CHANNEL NAME
+  DOCKER_REGISTRY: FIND IT FROM DOCKER REPO URL
+  DOCKER_IMAGE: NAME
+  BASE_URL: 'https://..report url'
+jobs:
+  execute_test:
+    name: Test Run
+    runs-on: ubuntu-latest
+    outputs:
+      outcome: ${{ steps.test-run.outcome }}
+
+  steps:
+    - name: Docker login
+      run: echo "${{ secrets.COMPANY_GITHUB_ACTION_TOKEN }}" | docker login --password-anything --username ${{github.actor }} ${DOCKER_REGISTRY}
+
+    - name: Initilaze folders
+      run: 'mkdir -p allure results'
+
+    - name: Run Tests
+      id: test-run
+      env:
+        VAULT_TOKEN: ${{ secrets.WREB.VAULT_TOKEN }}
+      run: |
+        docker pull ${DOCKER_REGISTRY}${DOCKER_IMAGE}:${{ inputs.dockerTag }}
+        docker run --shm-size=256m  \
+        -e VAULT_TOKEN= ${VAULT_TOKEN} \
+        locale: ${{ inputs.locale }}  \
+        env: $ {{ inputs.environment }}  \
+        config: ${{ inputs.config }}
+        suite: ${{ inputs.suite }}
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      if: ${{ always}}
+      with:
+        name: 'test result'
+        path: ${{ github.workspace }}/allure-results/
+
+
+      #  publish_report:
+      #    name: publish report
+      #    runs-on: ubuntu-latest
+      #    needs: execute_test
+
+

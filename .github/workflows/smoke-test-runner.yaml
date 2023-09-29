@@ -1,0 +1,18 @@
+---
+name: Run Smoke Test
+
+on:
+  workflow_dispatch:
+#    schedule:
+#      - cron: 30 10 ,22 ***
+
+jobs:
+  smoke_test:
+    name: Evaluate
+    uses: github url for /.github/workflows/execute-test,yamll@main
+    with:
+      dockerTag: 'latest'
+      environment: 'test'
+      config: 'web.smoetest.config.js'
+      suite: 'SmokeTest'
+    secrets: inherit
