@@ -22,14 +22,10 @@ jobs:
       run: npx playwright test
     - name: Make directory for test results
       run: 'mkdir -p playwrightTestResults'
+    - uses: actions/upload-artifact@v3
+      with:
+        name: playwright-report
+        path: ${{ github.workspace/playwrightTestResults/ }}
+        #path: playwright-report/
+        retention-days: 30
 
-
-  generate_test_report:
-    name: Generate Report
-    uses: actions/upload-artifact@v3
-    if: always()
-    with:
-      name: playwright-report
-      path: ${{ github.workspace/playwrightTestResults/ }}
-      #path: playwright-report/
-      retention-days: 30
